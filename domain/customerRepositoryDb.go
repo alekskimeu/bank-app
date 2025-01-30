@@ -9,23 +9,14 @@ import (
 )
 
 type CustomerRepositoryDb struct {
+	dbClient *sql.DB
 }
 
 func (db CustomerRepositoryDb) FindAll() ([]Customer, error) {
 
-	dbClient, err := sql.Open("mysql", "root:Soda3291@/banking")
-	if err != nil {
-		panic(err)
-	}
-
-	// See "Important settings" section.
-	dbClient.SetConnMaxLifetime(time.Minute * 3)
-	dbClient.SetMaxOpenConns(10)
-	dbClient.SetMaxIdleConns(10)
-
 	findAllSql := "select customer_id, name, city, zipcode, date_of_birth, status from customers"
 
-	rows, err := dbClient.Query(findAllSql)
+	rows, err := db.dbClient.Query(findAllSql)
 
 	if err != nil {
 		log.Println("Error fetching customers: ", err.Error())
@@ -46,4 +37,18 @@ func (db CustomerRepositoryDb) FindAll() ([]Customer, error) {
 	}
 
 	return customers, nil
+}
+
+func NewCustomerRepositoryDb() CustomerRepositoryDb {
+	dbClient, err := sql.Open("mysql", "root:Soda3291@tcp(localhost:3306)/banking")
+	if err != nil {
+		panic(err)
+	}
+
+	// See "Important settings" section.
+	dbClient.SetConnMaxLifetime(time.Minute * 3)
+	dbClient.SetMaxOpenConns(10)
+	dbClient.SetMaxIdleConns(10)
+
+	return CustomerRepositoryDb{dbClient}
 }
