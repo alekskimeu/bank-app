@@ -2,11 +2,12 @@ package domain
 
 import (
 	"database/sql"
-	"errors"
 	"log"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+
+	"bankapp/errs"
 )
 
 type CustomerRepositoryDb struct {
@@ -40,7 +41,7 @@ func (db CustomerRepositoryDb) FindAll() ([]Customer, error) {
 	return customers, nil
 }
 
-func (db CustomerRepositoryDb) FindById(id string) (*Customer, error) {
+func (db CustomerRepositoryDb) FindById(id string) (*Customer, *errs.AppError) {
 	findCustomerSql := "select customer_id, name, city, zipcode, date_of_birth, status from customers where customer_id = ?"
 
 	row := db.dbClient.QueryRow(findCustomerSql, id)
@@ -50,10 +51,10 @@ func (db CustomerRepositoryDb) FindById(id string) (*Customer, error) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.New("Customer not found")
+			return nil, errs.NewNotFoundError("Customer not found")
 		} else {
 			log.Println("Error scanning customer: " + err.Error())
-			return nil, errors.New("unexpected DB error")
+			return nil, errs.NewUnexpectedError("unexpected DB error")
 		}
 	}
 
