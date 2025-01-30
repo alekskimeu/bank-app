@@ -3,7 +3,10 @@ package app
 import (
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"net/http"
+
+	"github.com/gorilla/mux"
 
 	"bankapp/service"
 )
@@ -29,4 +32,18 @@ func (ch *CustomerHandler) getAllCustomers(w http.ResponseWriter, r *http.Reques
 		w.Header().Add("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(customers)
 	}
+}
+
+func (ch *CustomerHandler) getCustomer(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	customerId := vars["id"]
+
+	customer, err := ch.service.GetCustomer(customerId)
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, err.Error())
+	}
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(customer)
 }
