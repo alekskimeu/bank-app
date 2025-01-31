@@ -42,14 +42,6 @@ func (db CustomerRepositoryDb) FindAll(status string) ([]Customer, *errs.AppErro
 		return nil, errs.NewUnexpectedError("Unexpected DB error")
 	}
 
-	// for rows.Next() {
-	// 	var customer Customer
-
-	// 	err := rows.Scan(&customer.Id, &customer.Name, &customer.City, &customer.Zipcode, &customer.Dob, &customer.Status)
-
-	// 	customers = append(customers, customer)
-	// }
-
 	return customers, nil
 }
 
