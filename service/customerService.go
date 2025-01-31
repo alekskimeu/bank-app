@@ -7,7 +7,7 @@ import (
 )
 
 type CustomerService interface {
-	GetAllCustomers(string) ([]domain.Customer, *errs.AppError)
+	GetAllCustomers(string) ([]dto.CustomerResponse, *errs.AppError)
 	GetCustomer(string) (*dto.CustomerResponse, *errs.AppError)
 }
 
@@ -15,7 +15,7 @@ type DefaultCustomerService struct {
 	repo domain.CustomerRepository
 }
 
-func (s DefaultCustomerService) GetAllCustomers(status string) ([]domain.Customer, *errs.AppError) {
+func (s DefaultCustomerService) GetAllCustomers(status string) ([]dto.CustomerResponse, *errs.AppError) {
 	if status == "active" {
 		status = "1"
 	} else if status == "inactive" {
@@ -23,7 +23,19 @@ func (s DefaultCustomerService) GetAllCustomers(status string) ([]domain.Custome
 	} else {
 		status = ""
 	}
-	return s.repo.FindAll(status)
+	customers, err := s.repo.FindAll(status)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert domain customers to DTO responses
+	var customerResponses []dto.CustomerResponse
+	for _, customer := range customers {
+		customerResponses = append(customerResponses, customer.ToDto())
+	}
+
+	return customerResponses, nil
 }
 
 func (s DefaultCustomerService) GetCustomer(id string) (*dto.CustomerResponse, *errs.AppError) {
@@ -34,14 +46,7 @@ func (s DefaultCustomerService) GetCustomer(id string) (*dto.CustomerResponse, *
 		return nil, err
 	}
 
-	response := dto.CustomerResponse{
-		Id:      customer.Id,
-		Name:    customer.Name,
-		City:    customer.City,
-		Zipcode: customer.Zipcode,
-		Dob:     customer.Dob,
-		Status:  customer.Status,
-	}
+	response := customer.ToDto()
 	return &response, nil
 }
 
