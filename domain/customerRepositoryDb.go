@@ -12,24 +12,33 @@ import (
 )
 
 type CustomerRepositoryDb struct {
-	dbClient *sqlx.DB
+	dbClient *sql.DB
 }
 
 func (db CustomerRepositoryDb) FindAll(status string) ([]Customer, *errs.AppError) {
 
+	var rows *sql.Rows
 	var err error
-	customers := make([]Customer, 0)
 
 	if status == "" {
 		findAllSql := "select customer_id, name, city, zipcode, date_of_birth, status from customers"
-		err = db.dbClient.Select(&customers, findAllSql)
+		rows, err = db.dbClient.Query(findAllSql)
 	} else {
 		findAllSql := "select customer_id, name, city, zipcode, date_of_birth, status from customers where status = ?"
-		err = db.dbClient.Select(&customers, findAllSql, status)
+		rows, err = db.dbClient.Query(findAllSql, status)
 	}
 
 	if err != nil {
 		logger.LogError("Error fetching customers: " + err.Error())
+		return nil, errs.NewUnexpectedError("Unexpected DB error")
+	}
+
+	customers := make([]Customer, 0)
+
+	err = sqlx.StructScan(rows, &customers)
+
+	if err != nil {
+		logger.LogError("Error scanning customers: " + err.Error())
 		return nil, errs.NewUnexpectedError("Unexpected DB error")
 	}
 
@@ -39,9 +48,10 @@ func (db CustomerRepositoryDb) FindAll(status string) ([]Customer, *errs.AppErro
 func (db CustomerRepositoryDb) FindById(id string) (*Customer, *errs.AppError) {
 	findCustomerSql := "select customer_id, name, city, zipcode, date_of_birth, status from customers where customer_id = ?"
 
-	var customer Customer
+	row := db.dbClient.QueryRow(findCustomerSql, id)
 
-	err := db.dbClient.Get(&customer, findCustomerSql, id)
+	var customer Customer
+	err := row.Scan(&customer.Id, &customer.Name, &customer.City, &customer.Zipcode, &customer.Dob, &customer.Status)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -56,7 +66,7 @@ func (db CustomerRepositoryDb) FindById(id string) (*Customer, *errs.AppError) {
 }
 
 func NewCustomerRepositoryDb() CustomerRepositoryDb {
-	dbClient, err := sqlx.Open("mysql", "root:Soda3291@tcp(localhost:3306)/banking")
+	dbClient, err := sql.Open("mysql", "root:Soda3291@tcp(localhost:3306)/banking")
 	if err != nil {
 		panic(err)
 	}
