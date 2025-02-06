@@ -2,7 +2,6 @@ package domain
 
 import (
 	"database/sql"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -12,7 +11,7 @@ import (
 )
 
 type CustomerRepositoryDb struct {
-	dbClient *sql.DB
+	dbClient *sqlx.DB
 }
 
 func (db CustomerRepositoryDb) FindAll(status string) ([]Customer, *errs.AppError) {
@@ -65,16 +64,6 @@ func (db CustomerRepositoryDb) FindById(id string) (*Customer, *errs.AppError) {
 	return &customer, nil
 }
 
-func NewCustomerRepositoryDb() CustomerRepositoryDb {
-	dbClient, err := sql.Open("mysql", "root:Soda3291@tcp(localhost:3306)/banking")
-	if err != nil {
-		panic(err)
-	}
-
-	// See "Important settings" section.
-	dbClient.SetConnMaxLifetime(time.Minute * 3)
-	dbClient.SetMaxOpenConns(10)
-	dbClient.SetMaxIdleConns(10)
-
+func NewCustomerRepositoryDb(dbClient *sqlx.DB) CustomerRepositoryDb {
 	return CustomerRepositoryDb{dbClient}
 }
